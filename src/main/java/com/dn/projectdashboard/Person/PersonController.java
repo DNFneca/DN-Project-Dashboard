@@ -1,0 +1,58 @@
+package com.dn.projectdashboard.Person;
+
+import com.dn.projectdashboard.DTO.PersonDTO;
+import com.dn.projectdashboard.Mapper.PersonMapper;
+import lombok.AllArgsConstructor;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@AllArgsConstructor
+@RestController
+class PersonController {
+
+    private final PersonRepository repository;
+    private final PersonMapper personMapper;
+
+
+    // Aggregate root
+    // tag::get-aggregate-root[]
+    @GetMapping("/employees")
+    List<PersonDTO> all() {
+        List<Person> all = repository.findAll();
+        return personMapper.toDtoList(all);
+    }
+    // end::get-aggregate-root[]
+
+    @PostMapping("/employees")
+    Person newPerson(@RequestBody Person newPerson) {
+        return repository.save(newPerson);
+    }
+
+    // Single item
+
+    @GetMapping("/employees/{id}")
+    PersonDTO one(@PathVariable Integer id) {
+
+        return repository.findById(id).map(personMapper::toDto)
+                .orElseThrow(() -> new PersonNotFoundException(id));
+    }
+
+    @PutMapping("/employees/{id}")
+    Person replacePerson(@RequestBody Person newPerson, @PathVariable Integer id) {
+
+        return repository.findById(id)
+                .map(employee -> {
+                    employee.setPosition(newPerson.getPosition());
+                    return repository.save(employee);
+                })
+                .orElseGet(() -> {
+                    return repository.save(newPerson);
+                });
+    }
+
+    @DeleteMapping("/employees/{id}")
+    void deletePerson(@PathVariable Integer id) {
+        repository.deleteById(id);
+    }
+}

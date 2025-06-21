@@ -1,0 +1,27 @@
+package com.dn.projectdashboard.DTO;
+
+import com.dn.projectdashboard.Person.Person;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter
+@Setter
+public class TaskDTO {
+
+    public int id;
+    public String title;
+    public String description;
+    public double donePercentage;
+    public List<Person> assignees = new ArrayList<>(0);
+}

@@ -1,0 +1,28 @@
+package com.dn.projectdashboard.Mapper;
+
+import com.dn.projectdashboard.DTO.ManagerDTO;
+import com.dn.projectdashboard.DTO.PersonDTO;
+import com.dn.projectdashboard.Person.Person;
+import org.mapstruct.BeanMapping;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+
+import java.util.List;
+
+@Mapper(componentModel = "spring")
+public interface PersonMapper {
+
+    @Mapping(target = "id", source = "id")
+    @Mapping(target = "manager", source = "manager")
+    @Mapping(target = "position", source = "position")
+    @Mapping(target = "name", source = "name")
+    ManagerDTO toManagerDto(Person person);
+
+    @Mapping(target = "id", source = "id")
+    @Mapping(target = "manager", source = "manager")
+    @Mapping(target = "position", source = "position")
+    @Mapping(target = "name", source = "name")
+    PersonDTO toDto(Person person);
+
+    List<PersonDTO> toDtoList(List<Person> people);
+}
