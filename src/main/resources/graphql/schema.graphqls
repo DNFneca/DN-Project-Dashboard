@@ -1,0 +1,27 @@
+type Query {
+    allPeople: [Person]
+    person(id: ID!): Person
+    totalTasks: Int
+    allTasks: [Task]
+}
+
+type Mutation {
+    addPerson(name: String!, position: String!, managerId: ID, taskId: ID): Person
+    newTask(title: String!, description: String!, donePercentage: Float): Task
+}
+
+type Person {
+    id: ID!
+    position: String!
+    name: String!
+    manager: Person
+    task: Task
+}
+
+type Task {
+    id: ID!
+    title: String!
+    description: String!
+    donePercentage: Float!
+    assignees: [Person!]!
+}

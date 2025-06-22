@@ -20,7 +20,7 @@ public class Task {
     public @Id @GeneratedValue int id;
     public String title;
     public String description;
-    public double donePercentage;
+    public boolean isDone;
 
     @OneToMany(mappedBy = "task", cascade = CascadeType.ALL)
     public List<Person> assignees = new ArrayList<>(0);

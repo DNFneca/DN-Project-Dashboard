@@ -40,6 +40,7 @@ dependencies {
     implementation 'org.apache.kafka:kafka-streams'
     implementation 'org.mapstruct:mapstruct:1.6.3'
     implementation group: 'org.mariadb.jdbc', name: 'mariadb-java-client', version: '3.5.3'
+    implementation 'com.netflix.graphql.dgs.codegen:graphql-dgs-codegen-gradle:7.0.3'
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
     implementation 'org.springframework.integration:spring-integration-http'
     implementation 'org.springframework.integration:spring-integration-jdbc'

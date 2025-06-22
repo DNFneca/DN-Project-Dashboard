@@ -22,6 +22,6 @@ public class Task {
     public String description;
     public double donePercentage;
 
-    @OneToMany(cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL)
     public List<Person> assignees = new ArrayList<>(0);
 }

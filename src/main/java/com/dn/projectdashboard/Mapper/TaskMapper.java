@@ -16,7 +16,7 @@ public interface TaskMapper {
     @Mapping(target = "id", source = "id")
     @Mapping(target = "title", source = "title")
     @Mapping(target = "description", source = "description")
-    @Mapping(target = "donePercentage", source = "donePercentage")
+    @Mapping(target = "isDone", source = "isDone")
     TaskDTO toDto(Task task);
 
     List<TaskDTO> toDtoList(List<Task> task);
