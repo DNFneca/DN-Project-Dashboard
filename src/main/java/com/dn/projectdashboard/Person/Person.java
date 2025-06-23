@@ -1,6 +1,8 @@
 package com.dn.projectdashboard.Person;
 
+import com.dn.projectdashboard.Project.Project;
 import com.dn.projectdashboard.Task.Task;
+import com.dn.projectdashboard.Team.Team;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -12,11 +14,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
 @Getter
 @Setter
-@Table(name = "person")
 public class Person {
     public @Id @GeneratedValue int id;
     public String position;
@@ -24,7 +25,6 @@ public class Person {
 
     @ManyToOne
     @JoinColumn(name = "manager_id") // This column refers to another Person
-    @JsonBackReference
     public Person manager;
 
     @OneToMany(mappedBy = "manager")
@@ -32,4 +32,10 @@ public class Person {
 
     @ManyToOne()
     public Task task;
+
+    @ManyToOne
+    public Team team;
+
+    @ManyToMany
+    public List<Project> projects = new ArrayList<>(0);
 }

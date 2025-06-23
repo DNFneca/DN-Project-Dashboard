@@ -1,6 +1,5 @@
 package com.dn.projectdashboard.Task;
 
-import com.dn.projectdashboard.Mapper.TaskMapper;
 import lombok.AllArgsConstructor;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
@@ -9,13 +8,13 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @AllArgsConstructor
 @Controller
 class TaskController {
 
     private final TaskRepository repository;
-    private final TaskMapper taskMapper;
 
 
 
@@ -28,12 +27,12 @@ class TaskController {
     // end::get-aggregate-root[]
 
     @MutationMapping
-    Task newTask(@Argument String title, @Argument String description, @Argument Double donePercentage) {
+    Task newTask(@Argument String title, @Argument String description, @Argument Boolean donePercentage) {
         Task newTask = new Task();
         newTask.setTitle(title);
         newTask.setDescription(description);
         if (donePercentage == null) {
-            newTask.setDone(0);
+            newTask.setDone(false);
         } else {
             newTask.setDone(donePercentage);
         }
@@ -47,11 +46,10 @@ class TaskController {
 
     // Single item
 
-    @GetMapping("/tasks/{id}")
-    Task one(@PathVariable Integer id) {
+    @QueryMapping
+    Optional<Task> task(@Argument Integer id) {
 
-        return repository.findById(id)
-                .orElseThrow(() -> new TaskNotFoundException(id));
+        return repository.findById(id);
     }
 
     @MutationMapping("/tasks/{id}")
@@ -65,24 +63,5 @@ class TaskController {
                 .orElseGet(() -> {
                     return repository.save(newTask);
                 });
-    }
-
-
-    @MutationMapping
-    Task addToPercentage(@Argument Integer id, @Argument Integer taskId) {
-
-        return repository.findById(id)
-                .map(employee -> {
-                    employee.setTitle(newTask.getTitle());
-                    return repository.save(employee);
-                })
-                .orElseGet(() -> {
-                    return repository.save(newTask);
-                });
-    }
-
-    @DeleteMapping("/tasks/{id}")
-    void deleteTask(@PathVariable Integer id) {
-        repository.deleteById(id);
     }
 }

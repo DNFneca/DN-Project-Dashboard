@@ -1,7 +1,5 @@
 package com.dn.projectdashboard.Person;
 
-import com.dn.projectdashboard.DTO.PersonDTO;
-import com.dn.projectdashboard.Mapper.PersonMapper;
 import com.dn.projectdashboard.Task.TaskNotFoundException;
 import com.dn.projectdashboard.Task.TaskRepository;
 import lombok.AllArgsConstructor;
@@ -19,7 +17,6 @@ import java.util.Optional;
 public class PersonController {
 
     private final PersonRepository repository;
-    private final PersonMapper personMapper;
     private final TaskRepository taskRepository;
 
 
@@ -39,7 +36,7 @@ public class PersonController {
     // Single item
 
     @MutationMapping
-    public Person addPerson(@Argument String name, @Argument String position, @Argument Integer managerId, @Argument Integer taskId) {
+    public Person newPerson(@Argument String name, @Argument String position, @Argument Integer managerId, @Argument Integer taskId) {
         Person person = new Person();
         person.setName(name);
         person.setPosition(position);
@@ -48,13 +45,6 @@ public class PersonController {
         if (taskId != null)
             person.setTask(taskRepository.findById(taskId).orElseThrow(() -> new TaskNotFoundException(taskId)));
         return repository.save(person);
-    }
-
-    @GetMapping("/employees/{id}")
-    PersonDTO one(@PathVariable Integer id) {
-
-        return repository.findById(id).map(personMapper::toDto)
-                .orElseThrow(() -> new PersonNotFoundException(id));
     }
 
     @PutMapping("/employees/{id}")

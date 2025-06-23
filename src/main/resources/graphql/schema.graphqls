@@ -3,11 +3,50 @@ type Query {
     person(id: ID!): Person
     totalTasks: Int
     allTasks: [Task]
+    task(id: ID!): Task
+    allProjects: [Project]
+    allSprints: [Sprint]
+    sprint(id: ID!): Sprint
 }
 
 type Mutation {
-    addPerson(name: String!, position: String!, managerId: ID, taskId: ID): Person
-    newTask(title: String!, description: String!, donePercentage: Float): Task
+    newPerson(name: String!, position: String!, managerId: ID, taskId: ID): Person
+    newTask(title: String!, description: String!, donePercentage: Boolean): Task
+    newProject(name: String!, description: String): Project
+    newTeam(name: String!, description: String, teamLeadId: ID, memberIds: [ID], sprintId: ID): Team
+    newSprint(name: String!, description: String, goal: String, projectId: ID, startDate: String, endDate: String, teamIds: [ID], taskIds: [ID]): Sprint
+    addPersonToProject(personId: ID!, projectId: ID!): Project
+}
+
+type Sprint {
+    id: ID!
+    name: String!
+    description: String
+    goal: String
+    startDate: String
+    endDate: String
+    pointsDone: Float
+    storyPoints: Float
+    project: Project
+    teams: [Team]
+    tasks: [Task]
+}
+
+type Team {
+    id: ID!
+    name: String!
+    description: String
+    teamLead: Person
+    members: [Person]
+}
+
+type Project {
+    id: ID!
+    name: String!
+    description: String
+    employees: [Person]
+    sprints: [Sprint]
+    teams: [Team]
 }
 
 type Person {
@@ -16,6 +55,7 @@ type Person {
     name: String!
     manager: Person
     task: Task
+    team: Team
 }
 
 type Task {
