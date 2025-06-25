@@ -1,7 +1,10 @@
 package com.dn.projectdashboard.Person;
 
+import com.dn.projectdashboard.DTO.AuthResponse;
+import com.dn.projectdashboard.Service.AuthService;
 import com.dn.projectdashboard.Task.TaskNotFoundException;
 import com.dn.projectdashboard.Task.TaskRepository;
+import graphql.schema.DataFetchingEnvironment;
 import lombok.AllArgsConstructor;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
@@ -18,7 +21,7 @@ public class PersonController {
 
     private final PersonRepository repository;
     private final TaskRepository taskRepository;
-
+    private final AuthService authService;
 
     // Aggregate root
     // tag::get-aggregate-root[]
@@ -27,6 +30,17 @@ public class PersonController {
         return repository.findAll();
     }
     // end::get-aggregate-root[]
+
+    @MutationMapping
+    public AuthResponse register(@Argument String username, @Argument String password, @Argument String email) {
+        try {
+            Person user = authService.register(username, password, email);
+            String token = authService.login(username, password);
+            return new AuthResponse(token, user.getUsername());
+        } catch (Exception e) {
+            throw new RuntimeException("Registration failed: " + e.getMessage());
+        }
+    }
 
     @QueryMapping
     public Optional<Person> person(@Argument Integer id) {
@@ -45,6 +59,23 @@ public class PersonController {
         if (taskId != null)
             person.setTask(taskRepository.findById(taskId).orElseThrow(() -> new TaskNotFoundException(taskId)));
         return repository.save(person);
+    }
+
+    @MutationMapping
+    public AuthResponse login(@Argument String username, @Argument String password) {
+        try {
+            String token = authService.login(username, password);
+            return new AuthResponse(token, username);
+        } catch (Exception e) {
+            throw new RuntimeException("Login failed: " + e.getMessage());
+        }
+    }
+
+    @QueryMapping
+    public Person me(DataFetchingEnvironment env) {
+        Integer userId = env.getGraphQlContext().get("userId");
+        return repository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
     }
 
     @PutMapping("/employees/{id}")

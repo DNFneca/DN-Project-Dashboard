@@ -21,6 +21,9 @@ import java.util.List;
 public class Person {
     public @Id @GeneratedValue int id;
     public String position;
+    public String username;
+    public String email;
+    public String password;
     public String name;
 
     @ManyToOne

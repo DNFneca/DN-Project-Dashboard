@@ -41,4 +41,10 @@ public class ProjectController {
         project.get().getEmployees().add(person.get());
         return repository.save(project.get());
     }
+
+    @QueryMapping
+    public List<Project> projectsByPersonId(@Argument Integer personId) {
+        Optional<List<Project>> projects = repository.findProjectsByOwnerId(personId);
+        return projects.orElse(null);
+    }
 }

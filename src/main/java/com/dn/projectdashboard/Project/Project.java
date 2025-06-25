@@ -19,6 +19,7 @@ public class Project {
     @GeneratedValue int id;
     public String name;
     public String description;
+    public Integer ownerId;
 
     @ManyToMany
     public List<Person> employees = new ArrayList<>(0);

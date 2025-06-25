@@ -1,21 +1,32 @@
 type Query {
     allPeople: [Person]
     person(id: ID!): Person
+    projectsByPersonId(personId: ID!): [Person!]!
     totalTasks: Int
     allTasks: [Task]
     task(id: ID!): Task
     allProjects: [Project]
     allSprints: [Sprint]
+    me: Person
     sprint(id: ID!): Sprint
 }
 
 type Mutation {
+    login(username: String!, password: String!): AuthResponse!
+    register(username: String!, password: String!, email: String!): AuthResponse!
+    logout: AuthResponse!
     newPerson(name: String!, position: String!, managerId: ID, taskId: ID): Person
     newTask(title: String!, description: String!, donePercentage: Boolean): Task
     newProject(name: String!, description: String): Project
     newTeam(name: String!, description: String, teamLeadId: ID, memberIds: [ID], sprintId: ID): Team
     newSprint(name: String!, description: String, goal: String, projectId: ID, startDate: String, endDate: String, teamIds: [ID], taskIds: [ID]): Sprint
     addPersonToProject(personId: ID!, projectId: ID!): Project
+}
+
+type AuthResponse {
+    token: String
+    username: String
+    message: String
 }
 
 type Sprint {
