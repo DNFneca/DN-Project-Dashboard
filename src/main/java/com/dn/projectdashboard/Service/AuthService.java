@@ -12,11 +12,7 @@ import org.springframework.stereotype.Service;
 @AllArgsConstructor
 public class AuthService {
     public PersonRepository userRepository;
-
-    @Autowired
     private PasswordEncoder passwordEncoder;
-
-    @Autowired
     private SessionService sessionService;
 
     // TODO: Save the session tokens to the database, check that when logging in

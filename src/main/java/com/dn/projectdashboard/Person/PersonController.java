@@ -74,6 +74,8 @@ public class PersonController {
     @QueryMapping
     public Person me(DataFetchingEnvironment env) {
         Integer userId = env.getGraphQlContext().get("userId");
+        System.out.println(env);
+        System.out.println(userId);
         return repository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
     }

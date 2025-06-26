@@ -24,10 +24,11 @@ public class ProjectController {
     }
 
     @MutationMapping
-    public Project newProject(@Argument String name, @Argument String description) {
+    public Project createNewProject(@Argument String name, @Argument Integer ownerId, @Argument String description) {
         Project project = new Project();
         project.setName(name);
         project.setDescription(description);
+        project.setOwnerId(ownerId);
         return repository.save(project);
     }
 
@@ -44,7 +45,6 @@ public class ProjectController {
 
     @QueryMapping
     public List<Project> projectsByPersonId(@Argument Integer personId) {
-        Optional<List<Project>> projects = repository.findProjectsByOwnerId(personId);
-        return projects.orElse(null);
+        return repository.findAllByOwnerId(personId).orElse(null);
     }
 }
