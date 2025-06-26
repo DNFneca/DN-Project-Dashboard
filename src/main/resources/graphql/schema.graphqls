@@ -15,6 +15,7 @@ type Mutation {
     login(username: String!, password: String!): AuthResponse!
     register(username: String!, password: String!, email: String!): AuthResponse!
     logout: AuthResponse!
+    validateToken(token: String!): AuthResponse!
     newPerson(name: String!, position: String!, managerId: ID, taskId: ID): Person
     newTask(title: String!, description: String!, donePercentage: Boolean): Task
     createNewProject(name: String!, ownerId: ID!, description: String): Project

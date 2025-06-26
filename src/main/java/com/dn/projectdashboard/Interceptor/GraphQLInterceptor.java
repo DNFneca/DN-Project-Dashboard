@@ -20,6 +20,7 @@ public class GraphQLInterceptor implements WebGraphQlInterceptor {
     public Mono<WebGraphQlResponse> intercept(WebGraphQlRequest request, Chain chain) {
         String operationName = request.getDocument();
 
+
         // Check if operation is public
         if (isPublicOperation(operationName)) {
             return chain.next(request);

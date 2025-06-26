@@ -2,11 +2,15 @@ package com.dn.projectdashboard.Service;
 
 import com.dn.projectdashboard.Person.Person;
 import com.dn.projectdashboard.Person.PersonRepository;
+import com.dn.projectdashboard.Token.Token;
+import com.dn.projectdashboard.Token.TokenRepository;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
 
 @Service
 @AllArgsConstructor
@@ -14,6 +18,7 @@ public class AuthService {
     public PersonRepository userRepository;
     private PasswordEncoder passwordEncoder;
     private SessionService sessionService;
+    private TokenRepository tokenRepository;
 
     // TODO: Save the session tokens to the database, check that when logging in
 
@@ -24,8 +29,10 @@ public class AuthService {
         if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new RuntimeException("Invalid password");
         }
-
-        return sessionService.createSession(user.getId(), user.getUsername());
+        Token token = new Token();
+        token.setToken(sessionService.createSession(user.getId(), user.getUsername()));
+        token.setCreationDate(LocalDateTime.now());
+        return tokenRepository.save(token).getToken();
     }
 
     public Person register(String username, String password, String email) {
