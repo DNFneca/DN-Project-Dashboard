@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 @Service
 @AllArgsConstructor
 public class AuthService {
-    public PersonRepository userRepository;
+    private PersonRepository userRepository;
     private PasswordEncoder passwordEncoder;
     private SessionService sessionService;
     private TokenRepository tokenRepository;
@@ -23,15 +23,20 @@ public class AuthService {
     // TODO: Save the session tokens to the database, check that when logging in
 
     public String login(String username, String password) {
+        System.out.println(tokenRepository);
         Person user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
+        System.out.println(tokenRepository);
         if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new RuntimeException("Invalid password");
         }
+        System.out.println(tokenRepository);
         Token token = new Token();
         token.setToken(sessionService.createSession(user.getId(), user.getUsername()));
-        token.setCreationDate(LocalDateTime.now());
+        token.setBytes(SessionService.key.getEncoded());
+        System.out.println(tokenRepository);
+
         return tokenRepository.save(token).getToken();
     }
 

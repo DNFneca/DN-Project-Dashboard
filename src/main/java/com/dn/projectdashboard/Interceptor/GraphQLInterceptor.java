@@ -14,12 +14,14 @@ import reactor.core.publisher.Mono;
 public class GraphQLInterceptor implements WebGraphQlInterceptor {
     private SessionService sessionService;
 
-    private final String[] publicOperations = {"login", "register"};
+    private final String[] publicOperations = {"login", "register", "validateToken"};
 
     @Override
     public Mono<WebGraphQlResponse> intercept(WebGraphQlRequest request, Chain chain) {
         String operationName = request.getDocument();
 
+
+        //TODO: fix the issue where if you comment code it counts as running thus tricking it into thinking it's one of the public operations and skips the whole code to check authority
 
         // Check if operation is public
         if (isPublicOperation(operationName)) {

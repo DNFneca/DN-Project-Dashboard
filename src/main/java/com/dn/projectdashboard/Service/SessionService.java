@@ -1,10 +1,13 @@
 package com.dn.projectdashboard.Service;
 
+import com.dn.projectdashboard.Token.Token;
+import com.dn.projectdashboard.Token.TokenRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
@@ -13,10 +16,12 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
+@AllArgsConstructor
 public class SessionService {
-    private final SecretKey key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
-    private final Map<String, Integer> activeSessions = new ConcurrentHashMap<>();
+    public static final SecretKey key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
     private final long sessionTimeout = 3600000; // 1 hour
+    private TokenRepository tokenRepository;
+
 
     public String createSession(Integer userId, String username) {
         String token = Jwts.builder()
@@ -27,39 +32,54 @@ public class SessionService {
                 .signWith(key)
                 .compact();
 
-        activeSessions.put(token, userId);
+        Token tokenEntity = new Token();
+        tokenEntity.setToken(token);
+        tokenEntity.setBytes(key.getEncoded());
+
+        tokenRepository.save(tokenEntity);
         return token;
     }
 
     public boolean isValidSession(String token) {
         try {
-            if (!activeSessions.containsKey(token)) {
+            if (!tokenRepository.existsTokenByToken(token)) {
                 return false;
             }
 
+
             Claims claims = Jwts.parser()
-                    .setSigningKey(key)
+                    .setSigningKey(tokenRepository.findByTokenEquals(token).getToken().getBytes())
                     .build()
                     .parseClaimsJws(token)
                     .getBody();
 
             return claims.getExpiration().after(new Date());
         } catch (JwtException e) {
-            activeSessions.remove(token);
+            tokenRepository.removeByTokenEquals(token);
             return false;
         }
     }
 
     public Integer getUserIdFromToken(String token) {
         try {
+            System.out.println(tokenRepository.findByTokenEquals(token).getToken());
             Claims claims = Jwts.parser()
-                    .setSigningKey(key)
+                    .setSigningKey(tokenRepository.findByTokenEquals(token).getToken().getBytes())
                     .build()
                     .parseClaimsJws(token)
                     .getBody();
-
             return claims.get("userId", Integer.class);
         } catch (JwtException e) {
+            return null;
+        }
+    }
+
+    public String generateSessionFromOldToken(String token) {
+        if (isValidSession(token)) {
+            String session = createSession(getUserIdFromToken(token), getUsernameFromToken(token));
+            invalidateSession(token);
+            return session;
+        } else {
             return null;
         }
     }
@@ -67,7 +87,7 @@ public class SessionService {
     public String getUsernameFromToken(String token) {
         try {
             Claims claims = Jwts.parser()
-                    .setSigningKey(key)
+                    .setSigningKey(tokenRepository.findByTokenEquals(token).getToken().getBytes())
                     .build()
                     .parseClaimsJws(token)
                     .getBody();
@@ -79,6 +99,6 @@ public class SessionService {
     }
 
     public void invalidateSession(String token) {
-        activeSessions.remove(token);
+        tokenRepository.removeByTokenEquals(token);
     }
 }
