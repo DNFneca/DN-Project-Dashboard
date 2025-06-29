@@ -67,7 +67,7 @@ public class PersonController {
             String token = authService.login(username, password);
             return new AuthResponse(token, username);
         } catch (Exception e) {
-            throw new RuntimeException("Login failed: " + e.getMessage());
+            return new AuthResponse("Login failed: " + e.getMessage());
         }
     }
 

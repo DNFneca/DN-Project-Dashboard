@@ -2,6 +2,7 @@ package com.dn.projectdashboard.Interceptor;
 
 import com.dn.projectdashboard.Service.SessionService;
 import graphql.ExecutionResult;
+import graphql.GraphQLContext;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.SimpleInstrumentationContext;
@@ -28,16 +29,12 @@ public class GraphQLInstrumentation extends SimplePerformantInstrumentation {
     private SessionService sessionService;
 
     private final String[] publicOperations = {"login", "register", "validateToken"};
+    private final String[] validationOperations = {"tokenValidity"};
+
     @Override
     public InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters, InstrumentationState state) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-
-        var context = parameters.getExecutionContext().getGraphQLContext();
-
-
+        GraphQLContext context = parameters.getExecutionContext().getGraphQLContext();
         Document document = parameters.getExecutionContext().getDocument();
-
-
         List<String> fields = new ArrayList<>();
 
         for (Definition<?> definition : document.getDefinitions()) {
@@ -72,23 +69,24 @@ public class GraphQLInstrumentation extends SimplePerformantInstrumentation {
 
 
         String token = authHeader.substring(7);
-        System.out.println(token);
 
+        if (fields.contains("tokenValidity")) {
+            context.put("token", token);
+            return super.beginExecuteOperation(parameters, state);
+        }
         // Extract token from headers
-        if (token == null || !sessionService.isValidSession(token)) return SimpleInstrumentationContext.noOp();
+        Boolean isValidSession = sessionService.isValidSession(token);
 
-        System.out.println(token);
+        if (token == null || isValidSession == null || !isValidSession) return SimpleInstrumentationContext.noOp();
 
         // Add user info to context
         Integer userId = sessionService.getUserIdFromToken(token);
         String username = sessionService.getUsernameFromToken(token);
-        String finalToken = token;
 
 
-
+        context.put("token", token);
         context.put("userId", userId);
         context.put("username", username);
-        context.put("token", finalToken);
 
         return super.beginExecuteOperation(parameters, state);
     }

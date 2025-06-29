@@ -2,10 +2,7 @@ package com.dn.projectdashboard.Service;
 
 import com.dn.projectdashboard.Token.Token;
 import com.dn.projectdashboard.Token.TokenRepository;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.JwtException;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -20,7 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @AllArgsConstructor
 public class SessionService {
     public static final SecretKey key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
-    private final long sessionTimeout = 3600000; // 1 hour
+    private static final long sessionTimeout = 3600000; // 1 hour
     private TokenRepository tokenRepository;
 
 
@@ -41,17 +38,11 @@ public class SessionService {
         return token;
     }
 
-    public boolean isValidSession(String token) {
+    public Boolean isValidSession(String token) {
         try {
-            System.out.println(1);
-            System.out.println(tokenRepository.existsByTokenEquals(token));
             if (!tokenRepository.existsByTokenEquals(token)) {
-                return false;
+                return null;
             }
-
-            System.out.println(2);
-            System.out.println(Arrays.toString(tokenRepository.findByTokenEquals(token).getBytes()));
-
 
             Claims claims = Jwts.parser()
                     .setSigningKey(tokenRepository.findByTokenEquals(token).getBytes())
@@ -59,12 +50,12 @@ public class SessionService {
                     .parseClaimsJws(token)
                     .getBody();
 
-            System.out.println(3);
             return claims.getExpiration().after(new Date());
         } catch (JwtException e) {
-            System.out.println(e.getMessage());
-            tokenRepository.removeByTokenEquals(token);
-            return false;
+            if (e instanceof ExpiredJwtException) {
+                return false;
+            }
+            return null;
         }
     }
 
@@ -83,13 +74,10 @@ public class SessionService {
     }
 
     public String generateSessionFromOldToken(String token) {
-        if (isValidSession(token)) {
-            String session = createSession(getUserIdFromToken(token), getUsernameFromToken(token));
-            invalidateSession(token);
-            return session;
-        } else {
-            return null;
-        }
+        if (isValidSession(token)) return null;
+        String session = createSession(getUserIdFromToken(token), getUsernameFromToken(token));
+        invalidateSession(token);
+        return session;
     }
 
     public String getUsernameFromToken(String token) {
