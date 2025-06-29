@@ -20,24 +20,17 @@ public class AuthService {
     private SessionService sessionService;
     private TokenRepository tokenRepository;
 
-    // TODO: Save the session tokens to the database, check that when logging in
-
     public String login(String username, String password) {
-        System.out.println(tokenRepository);
         Person user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-
-        System.out.println(tokenRepository);
         if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new RuntimeException("Invalid password");
         }
-        System.out.println(tokenRepository);
         Token token = new Token();
         token.setToken(sessionService.createSession(user.getId(), user.getUsername()));
         token.setBytes(SessionService.key.getEncoded());
-        System.out.println(tokenRepository);
 
-        return tokenRepository.save(token).getToken();
+        return token.getToken();
     }
 
     public Person register(String username, String password, String email) {

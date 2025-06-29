@@ -2,7 +2,6 @@ package com.dn.projectdashboard.Token;
 
 import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
 
 import java.util.UUID;
 
@@ -14,6 +13,8 @@ public interface TokenRepository extends JpaRepository<Token, UUID> {
 
 
     boolean existsTokenByToken(String token);
+
+    boolean existsByTokenEquals(String token);
 
     @Transactional
     void removeByTokenEquals(String token);

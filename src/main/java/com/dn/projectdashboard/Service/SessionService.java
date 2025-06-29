@@ -11,6 +11,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -42,19 +43,26 @@ public class SessionService {
 
     public boolean isValidSession(String token) {
         try {
-            if (!tokenRepository.existsTokenByToken(token)) {
+            System.out.println(1);
+            System.out.println(tokenRepository.existsByTokenEquals(token));
+            if (!tokenRepository.existsByTokenEquals(token)) {
                 return false;
             }
 
+            System.out.println(2);
+            System.out.println(Arrays.toString(tokenRepository.findByTokenEquals(token).getBytes()));
+
 
             Claims claims = Jwts.parser()
-                    .setSigningKey(tokenRepository.findByTokenEquals(token).getToken().getBytes())
+                    .setSigningKey(tokenRepository.findByTokenEquals(token).getBytes())
                     .build()
                     .parseClaimsJws(token)
                     .getBody();
 
+            System.out.println(3);
             return claims.getExpiration().after(new Date());
         } catch (JwtException e) {
+            System.out.println(e.getMessage());
             tokenRepository.removeByTokenEquals(token);
             return false;
         }
@@ -64,7 +72,7 @@ public class SessionService {
         try {
             System.out.println(tokenRepository.findByTokenEquals(token).getToken());
             Claims claims = Jwts.parser()
-                    .setSigningKey(tokenRepository.findByTokenEquals(token).getToken().getBytes())
+                    .setSigningKey(tokenRepository.findByTokenEquals(token).getBytes())
                     .build()
                     .parseClaimsJws(token)
                     .getBody();
@@ -87,7 +95,7 @@ public class SessionService {
     public String getUsernameFromToken(String token) {
         try {
             Claims claims = Jwts.parser()
-                    .setSigningKey(tokenRepository.findByTokenEquals(token).getToken().getBytes())
+                    .setSigningKey(tokenRepository.findByTokenEquals(token).getBytes())
                     .build()
                     .parseClaimsJws(token)
                     .getBody();
