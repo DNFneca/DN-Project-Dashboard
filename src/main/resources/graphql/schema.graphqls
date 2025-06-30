@@ -1,7 +1,7 @@
 type Query {
     allPeople: [Person]
     person(id: ID!): Person
-    projectsByPersonId(personId: ID!): [Person!]!
+    projectsByPersonId(personId: ID!): [Project!]!
     totalTasks: Int
     allTasks: [Task]
     task(id: ID!): Task

@@ -11,7 +11,7 @@ public class CorsConfig implements WebMvcConfigurer {
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/graphql/**") // Apply CORS to GraphQL endpoint
                 .allowedOrigins("http://localhost:4200")
-                .allowedMethods("GET", "POST", "OPTIONS")
+                .allowedMethods("POST")
                 .allowedHeaders("*")
                 .allowCredentials(true)
                 .maxAge(3600);

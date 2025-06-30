@@ -9,6 +9,7 @@ import graphql.execution.instrumentation.SimpleInstrumentationContext;
 import graphql.execution.instrumentation.SimplePerformantInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.language.*;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
 import org.jspecify.annotations.Nullable;
@@ -46,18 +47,39 @@ public class GraphQLInstrumentation extends SimplePerformantInstrumentation {
 
         if (fields.isEmpty()) return SimpleInstrumentationContext.noOp();
 
-        HashSet<Boolean> isPrivate = new HashSet<>(0);
-
-        for (String field : fields) isPrivate.add(isPublicOperation(field));
-
-        if (isPrivate.isEmpty()) return SimpleInstrumentationContext.noOp();
-        if (!isPrivate.contains(false)) return super.beginExecuteOperation(parameters, state);
-
 
         ServletRequestAttributes attributes =
                 (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
 
         HttpServletRequest request = attributes.getRequest();
+
+
+        HashSet<Boolean> isPrivate = new HashSet<>(0);
+
+        for (String field : fields) {
+            isPrivate.add(isPublicOperation(field));
+            if (field.contains("validateToken")) {
+                for (Cookie cookie : request.getCookies()) {
+                    if (cookie.getName().equals("REFRESH_AUTH_TOKEN_DNPD")) {
+
+                        if (fields.contains("tokenValidity")) {
+                            context.put("token", cookie.getValue());
+                            return super.beginExecuteOperation(parameters, state);
+                        }
+                        Boolean isValidSession = sessionService.isValidSession(cookie.getValue());
+
+                        if (cookie.getValue() == null || isValidSession == null || !isValidSession) return SimpleInstrumentationContext.noOp();
+
+
+                        context.put("refreshToken", cookie.getValue());
+                    }
+                }
+                return SimpleInstrumentationContext.noOp();
+            }
+        }
+
+        if (isPrivate.isEmpty()) return SimpleInstrumentationContext.noOp();
+        if (!isPrivate.contains(false)) return super.beginExecuteOperation(parameters, state);
 
         if (request == null) return SimpleInstrumentationContext.noOp();
 

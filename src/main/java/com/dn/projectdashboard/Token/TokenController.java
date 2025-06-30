@@ -4,6 +4,8 @@ import com.dn.projectdashboard.DTO.AuthResponse;
 import com.dn.projectdashboard.Service.AuthService;
 import com.dn.projectdashboard.Service.SessionService;
 import graphql.schema.DataFetchingEnvironment;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
@@ -22,15 +24,23 @@ public class TokenController {
     private SessionService sessionService;
 
     @QueryMapping
-    public AuthResponse validateToken(DataFetchingEnvironment env) {
+    public AuthResponse validateToken(DataFetchingEnvironment env, HttpServletResponse response) {
         String token = env.getGraphQlContext().get("token");
         Boolean isValidSession = sessionService.isValidSession(token);
         System.out.println("isValidSession: " + isValidSession);
-        if (isValidSession) return null;
+        if (isValidSession == null || isValidSession) return new AuthResponse();
+
+        var cookie = new Cookie("AUTH_TOKEN_DNPD", sessionService.generateSessionFromOldToken(token));
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true);
+        cookie.setPath("/");
+        cookie.setMaxAge(7 * 24 * 60 * 60);
+        response.addCookie(cookie);
 
         AuthResponse authResponse = new AuthResponse();
         authResponse.setToken(sessionService.generateSessionFromOldToken(token));
         authResponse.setMessage("New token");
+        tokenRepository.removeByTokenEquals(token);
         return authResponse;
     }
 
