@@ -5,6 +5,7 @@ import com.dn.projectdashboard.Service.AuthService;
 import com.dn.projectdashboard.Task.TaskNotFoundException;
 import com.dn.projectdashboard.Task.TaskRepository;
 import graphql.schema.DataFetchingEnvironment;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
@@ -34,9 +35,8 @@ public class PersonController {
     @MutationMapping
     public AuthResponse register(@Argument String username, @Argument String password, @Argument String email) {
         try {
-            Person user = authService.register(username, password, email);
-            String token = authService.login(username, password);
-            return new AuthResponse(token, user.getUsername());
+            Person newPerson = authService.register(username, password, email);
+            return new AuthResponse("Successfully created user", newPerson.getUsername());
         } catch (Exception e) {
             throw new RuntimeException("Registration failed: " + e.getMessage());
         }

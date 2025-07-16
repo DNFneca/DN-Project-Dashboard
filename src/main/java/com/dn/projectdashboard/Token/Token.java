@@ -17,7 +17,7 @@ import java.util.UUID;
 public class Token {
     @Id @GeneratedValue(strategy = GenerationType.UUID)private UUID id;
 
-    @Column(unique = true, nullable = false)
+    @Column(unique = true, nullable = false, length = 1000)
     String token;
     byte[] bytes;
 }

@@ -39,6 +39,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
     implementation 'org.apache.kafka:kafka-streams'
     implementation("io.jsonwebtoken:jjwt:0.12.6")
+    implementation("com.google.auto.service:auto-service:1.1.1")
     implementation 'org.mapstruct:mapstruct:1.6.3'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     testImplementation 'org.springframework.security:spring-security-test'
@@ -59,7 +60,7 @@ dependencies {
     testImplementation 'org.springframework.graphql:spring-graphql-test'
     testImplementation 'org.springframework.integration:spring-integration-test'
     testImplementation 'org.springframework.kafka:spring-kafka-test'
-    runtimeOnly 'org.postgresql:postgresql:42.7.3'
+    runtimeOnly 'org.postgresql:postgresql:42.7.7'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testImplementation 'org.springframework:spring-webflux'
 }

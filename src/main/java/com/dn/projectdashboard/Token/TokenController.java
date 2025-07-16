@@ -22,25 +22,21 @@ public class TokenController {
     private TokenRepository tokenRepository;
     private AuthService authService;
     private SessionService sessionService;
+    private HttpServletResponse response;
 
     @QueryMapping
-    public AuthResponse validateToken(DataFetchingEnvironment env, HttpServletResponse response) {
-        String token = env.getGraphQlContext().get("token");
-        Boolean isValidSession = sessionService.isValidSession(token);
+    public AuthResponse validateToken(DataFetchingEnvironment env) {
+        String refreshToken = env.getGraphQlContext().get("refreshToken");
+        Boolean isValidSession = sessionService.isValidSession(refreshToken);
         System.out.println("isValidSession: " + isValidSession);
-        if (isValidSession == null || isValidSession) return new AuthResponse();
-
-        var cookie = new Cookie("AUTH_TOKEN_DNPD", sessionService.generateSessionFromOldToken(token));
-        cookie.setHttpOnly(true);
-        cookie.setSecure(true);
-        cookie.setPath("/");
-        cookie.setMaxAge(7 * 24 * 60 * 60);
-        response.addCookie(cookie);
+        if (isValidSession == null || !isValidSession) return new AuthResponse();
 
         AuthResponse authResponse = new AuthResponse();
-        authResponse.setToken(sessionService.generateSessionFromOldToken(token));
-        authResponse.setMessage("New token");
-        tokenRepository.removeByTokenEquals(token);
+        String session = sessionService.generateSessionFromOldToken(refreshToken);
+        System.out.println(session);
+        authResponse.setToken(session);
+        authResponse.setMessage("New refreshToken");
+        tokenRepository.removeByTokenEquals(refreshToken);
         return authResponse;
     }
 

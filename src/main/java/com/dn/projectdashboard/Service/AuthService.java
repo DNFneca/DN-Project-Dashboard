@@ -4,6 +4,8 @@ import com.dn.projectdashboard.Person.Person;
 import com.dn.projectdashboard.Person.PersonRepository;
 import com.dn.projectdashboard.Token.Token;
 import com.dn.projectdashboard.Token.TokenRepository;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +21,7 @@ public class AuthService {
     private PasswordEncoder passwordEncoder;
     private SessionService sessionService;
     private TokenRepository tokenRepository;
+    private final HttpServletResponse response;
 
     public String login(String username, String password) {
         Person user = userRepository.findByUsername(username)
@@ -29,6 +32,15 @@ public class AuthService {
         Token token = new Token();
         token.setToken(sessionService.createSession(user.getId(), user.getUsername()));
         token.setBytes(SessionService.key.getEncoded());
+
+        String session = sessionService.generateRefreshToken(user.getId(), user.getUsername());
+
+        var cookie = new Cookie("DNPD_AUTH_TOKEN", session);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true);
+        cookie.setPath("/");
+        cookie.setMaxAge((int) SessionService.refreshTokenTimeout);
+        response.addCookie(cookie);
 
         return token.getToken();
     }
@@ -47,5 +59,11 @@ public class AuthService {
 
     public void logout(String token) {
         sessionService.invalidateSession(token);
+        var cookie = new Cookie("DNPD_AUTH_TOKEN", "");
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true);
+        cookie.setPath("/");
+        cookie.setMaxAge(-1);
+        response.addCookie(cookie);
     }
 }

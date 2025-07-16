@@ -1,4 +1,4 @@
-package com.dn.projectdashboard.Interceptor;
+package com.dn.projectdashboard.Instrumentation;
 
 import com.dn.projectdashboard.Service.SessionService;
 import graphql.ExecutionResult;
@@ -12,16 +12,11 @@ import graphql.language.*;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
-import org.jspecify.annotations.Nullable;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.List;
 
 @Component
@@ -53,49 +48,37 @@ public class GraphQLInstrumentation extends SimplePerformantInstrumentation {
 
         HttpServletRequest request = attributes.getRequest();
 
-
-        HashSet<Boolean> isPrivate = new HashSet<>(0);
+        Boolean containsValidationOfAccessToken = null;
+        boolean containsValidationOfRefreshToken = false;
 
         for (String field : fields) {
-            isPrivate.add(isPublicOperation(field));
-            if (field.contains("validateToken")) {
-                for (Cookie cookie : request.getCookies()) {
-                    if (cookie.getName().equals("REFRESH_AUTH_TOKEN_DNPD")) {
-
-                        if (fields.contains("tokenValidity")) {
-                            context.put("token", cookie.getValue());
-                            return super.beginExecuteOperation(parameters, state);
-                        }
-                        Boolean isValidSession = sessionService.isValidSession(cookie.getValue());
-
-                        if (cookie.getValue() == null || isValidSession == null || !isValidSession) return SimpleInstrumentationContext.noOp();
-
-
-                        context.put("refreshToken", cookie.getValue());
-                    }
-                }
-                return SimpleInstrumentationContext.noOp();
-            }
+            if (isPublicOperation(field)) containsValidationOfAccessToken = true;
+            if (field.contains("validateToken")) containsValidationOfRefreshToken = true;
         }
 
-        if (isPrivate.isEmpty()) return SimpleInstrumentationContext.noOp();
-        if (!isPrivate.contains(false)) return super.beginExecuteOperation(parameters, state);
-
+        if (containsValidationOfAccessToken == null) return SimpleInstrumentationContext.noOp();
+        if (!containsValidationOfAccessToken) return super.beginExecuteOperation(parameters, state);
+        if (!containsValidationOfRefreshToken && !containsValidationOfAccessToken) return super.beginExecuteOperation(parameters, state);
         if (request == null) return SimpleInstrumentationContext.noOp();
-
 
         String authHeader = request.getHeader("Authorization");
 
         // If needed, parse and manually authenticate the JWT here
         if (authHeader == null || !authHeader.startsWith("Bearer ")) return SimpleInstrumentationContext.noOp();
 
-
         String token = authHeader.substring(7);
 
-        if (fields.contains("tokenValidity")) {
+        if (containsValidationOfRefreshToken) {
+            String tokenFromCookie = getTokenFromCookie(request.getCookies());
+            Boolean isValidSession = sessionService.isValidSession(tokenFromCookie);
+            if (isValidSession == null || !isValidSession)
+                return SimpleInstrumentationContext.noOp();
+            System.out.println("Adding Refresh Token");
+            context.put("refreshToken", tokenFromCookie);
             context.put("token", token);
             return super.beginExecuteOperation(parameters, state);
         }
+
         // Extract token from headers
         Boolean isValidSession = sessionService.isValidSession(token);
 
@@ -124,6 +107,15 @@ public class GraphQLInstrumentation extends SimplePerformantInstrumentation {
             }
         }
         return false;
+    }
+
+    private String getTokenFromCookie(Cookie[] cookies) {
+        for (Cookie cookie : cookies) {
+            if (cookie.getName().equals("DNPD_AUTH_TOKEN")) {
+                return cookie.getValue();
+            }
+        }
+        return null;
     }
 
     private List<String> extractFields(SelectionSet selectionSet, String prefix) {

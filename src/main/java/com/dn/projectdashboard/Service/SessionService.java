@@ -6,41 +6,52 @@ import com.dn.projectdashboard.Token.Token;
 import com.dn.projectdashboard.Token.TokenRepository;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
-import java.util.Arrays;
 import java.util.Date;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 @AllArgsConstructor
 public class SessionService {
     public static final SecretKey key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
-    private static final long sessionTimeout = 3600000; // 1 hour
+    public static final long accessTokenTimeout = 3600000; // 1 hour
+    public static final long refreshTokenTimeout = 86400000; // 1 day
     private TokenRepository tokenRepository;
     private PersonRepository personRepository;
+    private HttpServletResponse response;
 
     public String generateAccessToken(Person user) {
         return generateAccessToken(user.getId(), user.getUsername());
     }
 
-    public String generateAccessToken(Integer userId) {
-        personRepository.findById(userId).orElse(null);
-        return null;
-    }
-
     public String generateAccessToken(Integer userId, String username) {
+        String token = Jwts.builder()
+                .subject(username)
+                .claim("userId", userId)
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + accessTokenTimeout))
+                .signWith(key)
+                .compact();
 
+        Token tokenEntity = new Token();
+        tokenEntity.setToken(token);
+        tokenEntity.setBytes(key.getEncoded());
+
+        tokenRepository.save(tokenEntity);
+        return token;
     }
+
+
     public String createSession(Integer userId, String username) {
         String token = Jwts.builder()
                 .subject(username)
                 .claim("userId", userId)
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + sessionTimeout))
+                .expiration(new Date(System.currentTimeMillis() + accessTokenTimeout))
                 .signWith(key)
                 .compact();
 
@@ -75,7 +86,7 @@ public class SessionService {
     public Boolean isValidRefreshToken(String token) {
         try {
             if (!tokenRepository.existsByTokenEquals(token)) {
-                return null;
+                return false;
             }
 
             Claims claims = Jwts.parser()
@@ -96,7 +107,6 @@ public class SessionService {
 
     public Integer getUserIdFromToken(String token) {
         try {
-            System.out.println(tokenRepository.findByTokenEquals(token).getToken());
             Claims claims = Jwts.parser()
                     .setSigningKey(tokenRepository.findByTokenEquals(token).getBytes())
                     .build()
@@ -108,22 +118,30 @@ public class SessionService {
         }
     }
 
-    public String generateSessionFromOldToken(String token) {
-        if (isValidSession(token)) return null;
-        String session = createRefreshToken(getUserIdFromToken(token), getUsernameFromToken(token));
-        invalidateSession(token);
+    public String generateSessionFromOldToken(String oldRefreshToken) {
+        if (!isValidSession(oldRefreshToken)) return null;
+        String session = createRefreshToken(getUserIdFromToken(oldRefreshToken), getUsernameFromToken(oldRefreshToken));
+        var cookie = new Cookie("DNPD_AUTH_TOKEN", session);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true);
+        cookie.setPath("/");
+        cookie.setMaxAge((int) SessionService.refreshTokenTimeout);
+        response.addCookie(cookie);
+        createSession(getUserIdFromToken(oldRefreshToken), getUsernameFromToken(oldRefreshToken));
+        invalidateSession(oldRefreshToken);
         return session;
     }
 
-    public String generateRefreshToken(String token) {
-        return createRefreshToken(token);
+    public String generateRefreshToken(Integer userId, String username) {
+        return createRefreshToken(userId, username);
     }
 
-    private String createRefreshToken(String token) {
+    private String createRefreshToken(Integer userId, String username) {
         String refreshToken = Jwts.builder()
-                .claim("token", token)
+                .subject(username)
+                .claim("userId", userId)
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + sessionTimeout))
+                .expiration(new Date(System.currentTimeMillis() + refreshTokenTimeout))
                 .issuer("dnpd")
                 .signWith(key)
                 .compact();
@@ -131,7 +149,7 @@ public class SessionService {
         Token tokenEntity = new Token();
         tokenEntity.setToken(refreshToken);
         tokenEntity.setBytes(key.getEncoded());
-        return refreshToken;
+        return tokenRepository.save(tokenEntity).getToken();
     }
 
     public String getUsernameFromToken(String token) {
